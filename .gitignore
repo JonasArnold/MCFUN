@@ -50,3 +50,10 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# Specific for Mcu Xpress Workplace
+.metadata
+.mcuxpressoide_packages_support
+FreeRTOS_TAD_logs
+*.ld*
+*.axf*
