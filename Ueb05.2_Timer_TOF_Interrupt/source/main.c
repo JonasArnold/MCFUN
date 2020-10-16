@@ -18,10 +18,9 @@ uint8_t ledState = 1;
 // flex timer 0 ISR
 void FTM0_IRQHandler(void)
 {
-	ledState = ~ledState;
 	GPIOC->PDDR = (ledState << 8);  // write led State to port C
-
-	// TODO: Reset Flag??
+	FTM0->SC &= ~FTM_SC_TOF_MASK;  // clear TOF
+	ledState = ~ledState;
 }
 
 /**
@@ -35,9 +34,13 @@ void main(void) {
 	// Enable pull up resistors (PE = Pull Enable, PS = Pull Select (0 = down, 1 = up)) (mux = 1 => pin is gpio)
 	PORTB->PCR[1] |= PORT_PCR_PE(1) | PORT_PCR_PS(1) | PORT_PCR_MUX(1);
 
+	/* INTERRUPT */
+	NVIC_SetPriority(FTM0_IRQn, 8);
+	NVIC_EnableIRQ(FTM0_IRQn);
+
 	/* TIMER */
-	// Reset Counter of Timer;
-	FTM0->CNT = 0;
+	// Enable clock
+	SIM->SCGC6 |= SIM_SCGC6_FTM0_MASK;
 
 	// Set modulo of Timer 0 (end value) (7812 = 500ms)
 	FTM0->MOD = 7812;

@@ -28,15 +28,21 @@ void main(void) {
 	PORTB->PCR[1] |= PORT_PCR_PE(1) | PORT_PCR_PS(1) | PORT_PCR_MUX(1);
 
 	/* TIMER */
+	// Enable clock
+	SIM->SCGC6 |= SIM_SCGC6_FTM0_MASK;
+
+	// Set modulo of Timer 0 (end value) (7812 = 500ms)
+	FTM0->MOD = 7812;
+
 	// Start FTM0 with fixed Frequency 250kHz, Set Prescaler to 16
 	FTM0->SC = FTM_SC_CLKS(2) | FTM_SC_PS(4);
 
 	/* Endless */
 	while (true) {
-		FTM0->MOD = 7812; // reset count of FTM0 (7812 = 500ms)
 		GPIOC->PDDR = (ledState << 8);  // write led State to port C
 
 		while ((FTM0->SC & FTM_SC_TOF_MASK) == 0) { }  // wait for TOF
+		FTM0->SC &= ~FTM_SC_TOF_MASK;  // clear TOF
 
 		ledState = ~ledState;
 	}
