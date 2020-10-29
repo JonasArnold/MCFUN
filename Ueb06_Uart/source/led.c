@@ -23,9 +23,13 @@
  * Enables the blue led on the tinyk22 or
  * the red rear left led on the MC-Car
  */
-void ledSetOn(void)
-{
-  // todo #06.06 enable the led on PTC2 (TinyK22) or PTA17 (MC-Car)
+void ledSetOn(void) {
+	// todo #06.06 enable the led on PTC2 (TinyK22) or PTA17 (MC-Car)
+	if (TGT_IS_MCCAR) {
+		GPIOA->PDOR &= ~0x20000;
+	} else if (TGT_IS_TINYK22) {
+		GPIOC->PDOR &= ~0x4;
+	}
 
 }
 
@@ -33,10 +37,13 @@ void ledSetOn(void)
  * Disables the blue led on the tinyk22 or
  * the red rear left led on the MC-Car
  */
-void ledSetOff(void)
-{
-  // todo #06.07 disable the blue led on PTC2 (TinyK22) or PTA17 (MC-Car)
-
+void ledSetOff(void) {
+	// todo #06.07 disable the blue led on PTC2 (TinyK22) or PTA17 (MC-Car)
+	if (TGT_IS_MCCAR) {
+		GPIOA->PDOR |= (1 << 17);
+	} else if (TGT_IS_TINYK22) {
+		GPIOC->PDOR |= (1 << 2);
+	}
 }
 
 
@@ -49,9 +56,13 @@ void ledSetOff(void)
  */
 bool ledIsOn(void)
 {
-  bool ledTiny = !(GPIOC->PDOR & (1<<2));
-  bool ledMcCar = !(GPIOA->PDOR & (1<<17));
-  return ledTiny || ledMcCar;
+	bool ledTiny = false, ledMcCar = false;
+	if(TGT_IS_MCCAR) {
+		ledMcCar = !(GPIOA->PDOR & (1<<17));
+	} else if(TGT_IS_TINYK22) {
+		ledTiny = !(GPIOC->PDOR & (1<<2));
+	}
+	return ledTiny || ledMcCar;
 }
 
 
@@ -75,8 +86,16 @@ tError ledParseCommand(const char *cmd)
     return EC_SUCCESS;
   }
   // todo #06.08 implement the command "status"
-  // ...
-  // ...
+  else if (strcmp(cmd, "status") == 0)
+  {
+	  if(ledIsOn()){
+		  termWriteLine("tinyLed status: 1");
+	  }
+	  else{
+		  termWriteLine("tinyLed status: 0");
+	  }
+	  return EC_SUCCESS;
+  }
   else if (strncmp(cmd, "set ", sizeof("set")) == 0)
   {
     cmd += sizeof("set ") - 1;

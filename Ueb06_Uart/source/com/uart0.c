@@ -50,7 +50,18 @@ void UART0_RX_TX_IRQHandler(void)
   {
     // todo #06.05 (MC-Car) store the received byte into receiver Queue (rxBuf)
     // but only if the queue isn't full!
-
+	  if(rxBufCount < UART0_RX_BUF_SIZE)
+	  {
+		  rxBuf[rxBufWritePos++] = data;  // write data
+		  rxBufCount++;
+		  if(rxBufWritePos >= UART0_RX_BUF_SIZE) {
+			  rxBufWritePos = 0;  // ringbuffer reset position
+		  }
+	  }
+	  else  // discard data and stop receiving
+	  {
+		  UART0->C1 &= ~(UART_C2_RIE(1));  // clear Receive interrupt enable
+	  }
   }
 
   if (status & UART_S1_TDRE_MASK)
@@ -277,18 +288,26 @@ void uart0Init(uint16_t baudrate)
   rxBufReadPos = rxBufWritePos = rxBufCount = 0;
 
   // todo #06.01 (MC-Car) configure clock gating (Kinetis Reference Manual p277) KRM277
-
+  SIM->SCGC4 |= SIM_SCGC4_UART0(1);
 
   // todo #06.02 (MC-Car) configure port multiplexing, enable Pull-Ups and enable OpenDrain (ODE)!
   // OpenDrain is needed to ensure that no current flows from Target-uC to the Debugger-uC
-
+  uint32_t bitmask = 0;
+  bitmask |= PORT_PCR_MUX(0b0010) | PORT_PCR_PE(1) | PORT_PCR_PS(1) | PORT_PCR_ODE(1);
+  PORTA->PCR[1] = bitmask;  // PTA1 = RX0  => overwrite because mux is 1111 as default
+  PORTA->PCR[2] = bitmask;  // PTA2 = TX0
 
   // todo #06.03 (MC-Car) set the baudrate into the BDH (first) and BDL (second) register. KRM1215ff
-
+  uint32_t sbr = CORECLOCK/(16 * baudrate);
+  UART0->BDH |= ((sbr >> 8) & UART_BDH_SBR_MASK); // configure high byte (only write where SBR is)
+  UART0->BDL |= (sbr & 0xFF); // configure low byte
 
   // todo #06.04 (MC-Car) enable uart receiver, receiver interrupt and transmitter as well as
   // enable and set the rx/tx interrupt in the nested vector interrupt controller (NVIC)
-
+  UART0->C2 |= (UART_C2_RE(1) | UART_C2_RIE(1));  // enable receiver and interrupt
+  UART0->C2 |= (UART_C2_TE(1) | UART_C2_TIE(1));  // enable transmitter and interrupt
+  NVIC_SetPriority(UART0_RX_TX_IRQn, PRIO_UART0); // set and enable Rx Tx interrupts
+  NVIC_EnableIRQ(UART0_RX_TX_IRQn);
 
   // enable the error interrupts of the uart and configure the NVIC
   UART0->C3 = UART_C3_ORIE_MASK | UART_C3_NEIE_MASK | UART_C3_FEIE_MASK;

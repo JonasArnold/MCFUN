@@ -47,7 +47,18 @@ void UART1_RX_TX_IRQHandler(void)
   {
     // todo #06.05 (TinyK22) store the received byte into receiver Queue (rxBuf)
     // but only if the queue isn't full!
-
+	  if(rxBufCount < UART1_RX_BUF_SIZE)
+		  {
+			  rxBuf[rxBufWritePos++] = data;  // write data
+			  rxBufCount++;
+			  if(rxBufWritePos >= UART1_RX_BUF_SIZE) {
+				  rxBufWritePos = 0;  // ringbuffer reset position
+			  }
+		  }
+		  else  // discard data and stop receiving
+		  {
+			  UART1->C1 &= ~(UART_C2_RIE(1));  // clear Receive interrupt enable
+		  }
   }
 
   if (status & UART_S1_TDRE_MASK)
@@ -274,18 +285,25 @@ void uart1Init(uint16_t baudrate)
   rxBufReadPos = rxBufWritePos = rxBufCount = 0;
 
   // todo #06.01 (TinyK22) configure clock gating (Kinetis Reference Manual p277) KRM277
-
+  SIM->SCGC4 |= SIM_SCGC4_UART1(1);
 
   // todo #06.02 (TinyK22) configure port multiplexing, enable Pull-Ups and enable OpenDrain (ODE)!
   // OpenDrain is needed to ensure that no current flows from Target-uC to the Debugger-uC
-
+  /* Port- Mux RX/TX PIN */
+  PORTC->PCR[4] |= PORT_PCR_PE(1) | PORT_PCR_PS(1) | PORT_PCR_ODE(1) | PORT_PCR_MUX(0b0011); //Alt. 3 PTE0 (TX) Open Drain
+  PORTC->PCR[3] |= PORT_PCR_PE(1) | PORT_PCR_PS(1) | PORT_PCR_ODE(1) | PORT_PCR_MUX(0b0011); //Pull Up Alt. 3 PTE1 (RX)
 
   // todo #06.03 (TinyK22) set the baudrate into the BDH (first) and BDL (second) register. KRM1215ff
-
+  uint32_t sbr = CORECLOCK/(16 * baudrate);
+  UART1->BDH |= ((sbr >> 8) & UART_BDH_SBR_MASK); // configure high byte (only write where SBR is)
+  UART1->BDL |= (sbr & 0xFF); // configure low byte
 
   // todo #06.04 (TinyK22) enable uart receiver, receiver interrupt and transmitter as well as
   // enable and set the rx/tx interrupt in the nested vector interrupt controller (NVIC)
-
+  UART1->C2 |= (UART_C2_RE(1) | UART_C2_RIE(1));  // enable receiver and interrupt
+  UART1->C2 |= (UART_C2_TE(1) | UART_C2_TIE(1));  // enable transmitter and interrupt
+  NVIC_SetPriority(UART1_RX_TX_IRQn, PRIO_UART0); // set and enable Rx Tx interrupts
+  NVIC_EnableIRQ(UART1_RX_TX_IRQn);
 
   // enable the error interrupts of the uart and configure the NVIC
   UART1->C3 = UART_C3_ORIE_MASK | UART_C3_NEIE_MASK | UART_C3_FEIE_MASK;

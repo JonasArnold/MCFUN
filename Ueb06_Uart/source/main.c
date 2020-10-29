@@ -22,9 +22,9 @@
  */
 void main(void)
 {
-  termInit(57600);
+  termInit(19200);  // 57600
   ledInit();
-//printf("Hello World\r\n");
+
   while(TRUE)
   {
     termDoWork();
