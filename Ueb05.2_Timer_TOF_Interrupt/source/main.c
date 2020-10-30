@@ -18,13 +18,15 @@
 // flex timer 0 ISR
 void FTM0_IRQHandler(void)
 {
+	FTM0->SC &= ~FTM_SC_TOF_MASK;  // clear TOF (=> hw is ready to get new interrupt)
 	GPIOC->PTOR = (1 << 8);        // toggle LED (Toggle Register)
-	FTM0->SC &= ~FTM_SC_TOF_MASK;  // clear TOF
 }
 
 /**
  * Toggles PTC8 (Led green Front Left) every 500 ms
  * Clock used: fixed frequency with prescaler 8
+ *
+ * Fixed frequency clock: MCGFFCLK p113, p542/p152
  */
 void main(void) {
 	/* GPIO */
