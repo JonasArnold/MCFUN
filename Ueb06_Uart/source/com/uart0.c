@@ -54,13 +54,7 @@ void UART0_RX_TX_IRQHandler(void)
 	  {
 		  rxBuf[rxBufWritePos++] = data;  // write data
 		  rxBufCount++;
-		  if(rxBufWritePos >= UART0_RX_BUF_SIZE) {
-			  rxBufWritePos = 0;  // ringbuffer reset position
-		  }
-	  }
-	  else  // discard data and stop receiving
-	  {
-		  UART0->C1 &= ~(UART_C2_RIE(1));  // clear Receive interrupt enable
+		  if(rxBufWritePos >= UART0_RX_BUF_SIZE) rxBufWritePos = 0;  // ringbuffer reset position
 	  }
   }
 

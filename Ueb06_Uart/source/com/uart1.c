@@ -48,16 +48,10 @@ void UART1_RX_TX_IRQHandler(void)
     // todo #06.05 (TinyK22) store the received byte into receiver Queue (rxBuf)
     // but only if the queue isn't full!
 	  if(rxBufCount < UART1_RX_BUF_SIZE)
-		  {
+	  {
 			  rxBuf[rxBufWritePos++] = data;  // write data
 			  rxBufCount++;
-			  if(rxBufWritePos >= UART1_RX_BUF_SIZE) {
-				  rxBufWritePos = 0;  // ringbuffer reset position
-			  }
-		  }
-		  else  // discard data and stop receiving
-		  {
-			  UART1->C1 &= ~(UART_C2_RIE(1));  // clear Receive interrupt enable
+			  if(rxBufWritePos >= UART1_RX_BUF_SIZE) rxBufWritePos = 0;  // ringbuffer reset position
 		  }
   }
 
