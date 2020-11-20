@@ -21,7 +21,7 @@ int main(void)
 {
 	uint32_t data;
 
-	// Direction data register (DDR) (1 = input)
+	// Direction data register (DDR) (1 = output)
 	GPIOC->PDDR |= (1 << 8) | (1 << 9) | (1 << 10);
 
 	// Pin Mux Control would need to be set per output (GPIO C)
@@ -38,7 +38,7 @@ int main(void)
 		data = GPIOB->PDIR;  // read data register from port B
 		data <<= 7;         // shift up
 		data = ~data;       // led lit when 0 => therefore invert
-		GPIOC->PDDR = data;  // write data to port C
+		GPIOC->PDOR = data;  // write data to port C
 		// it is ok to set all 32bits because data direction was set for the 3 relevant pins
 		// it is ok to set bits that are defined as inputs
 	}
