@@ -259,9 +259,7 @@ tError i2cReadCmdData(uint8_t adr, uint8_t cmd, uint8_t *data, uint8_t length)
   result = i2cRepeatedStart(adr, TRUE);  // repeated start to change the direction from write to read
   if (result != EC_SUCCESS) return result;
 
-  i2cReceiveData(data, length); // read the data
-
-  i2cStop();                                // generate stop condition
+  i2cReceiveData(data, length); // read the data & generate the stop condition
   return EC_SUCCESS;
 }
 
@@ -312,7 +310,7 @@ void i2cInit(void)
   PORTE->PCR[25] = PORT_PCR_ODE(1) | PORT_PCR_PE(1) | PORT_PCR_PS(1) | PORT_PCR_MUX(5);  // Alt 5 for I2C0_SDA (PTE25)
 
   // todo #10.03 configure i2c clock (frequency divider register) to 400 kHz
-  I2C0->F = I2C_F_MULT(0) | I2C_F_ICR(0x1C);
+  I2C0->F = I2C_F_MULT(0) | I2C_F_ICR(0x1D);  // set to 375kHz (below 400kHz for some reason)
 
   // todo #10.04 enable i2c bus
   I2C0->C1 |= I2C_C1_IICEN(1);

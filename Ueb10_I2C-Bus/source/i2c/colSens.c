@@ -187,13 +187,12 @@ tError colSensInit(void)
 
   // todo #10.07 configure gain to 60x
   cmd = REG_COMMAND | REG_CONTROL;
-  data = REG_CONTROL_AGAIN(60);
+  data = REG_CONTROL_AGAIN(3);  // 60x
   result = i2cWriteCmdData(I2C_COLSENS_ADR, cmd, &data, sizeof(data));
 
   // todo #10.08 enable the white led under the MC-Car (PTC12)
   PORTC->PCR[12] |= PORT_PCR_MUX(1); // multiplexing
-  GPIOC->PDDR |= (1 << 12);  // set output
-  GPIOC->PCOR |= (1 << 12);  // enable output (clear = enable led)
+  GPIOC->PDDR |= (1 << 12);  // set output (clear = enable led)
 
   return EC_SUCCESS;
 }
