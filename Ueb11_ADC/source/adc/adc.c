@@ -24,7 +24,7 @@
 
 #define REFERENCE_VOLTAGE    1195000  // 1'195'000uV = 1.195V
 #define VTEM25 				 716000   // 716'000uV = 716mV
-#define TEMP_SENSOR_SLOPE    1620     // 1620 uV/°C = 1.62mV/°C
+#define TEMP_SENSOR_SLOPE    162      // 1620 uV/°C = 1.62mV/°C (10th of degrees needed) => div by 10
 
 
 /**
@@ -66,7 +66,8 @@ uint32_t adcGetVoltage(uint8_t channel)
   uint16_t voltageAdc = adcGet16BitValue(channel);
 
   // 2. calculate and return the voltage in uV.
-  return voltageAdc * (REFERENCE_VOLTAGE / 65535);
+  uint64_t uV = ((uint64_t)REFERENCE_VOLTAGE * voltageAdc)/ 65535;
+  return (uint32_t)uV;
 }
 
 
@@ -100,8 +101,8 @@ int16_t adcGetTemperature(void)
   // 1. perform a adc conversion
   uint32_t temp = adcGetVoltage(ADC_CH_TEMPERATURE);
 
-  // 2. calculate the temperatur. KRM804 & MK22 Datasheet p42
-  return 25 - ((temp - VTEM25) / TEMP_SENSOR_SLOPE);
+  // 2. calculate the temperature. KRM804 & MK22 Datasheet p42 (250 because of 10th of degree needed)
+  return 250 - ((int16_t)(temp - VTEM25) / TEMP_SENSOR_SLOPE);
 }
 
 
@@ -144,13 +145,17 @@ void adcInit(void)
   // todo #11.03 configure adc as follows:
   // set the ADCK to 7.5 MHz using the busClock (60MHz)
   // and configure 16 bit conversion with long sample time
-  ADC1->CFG1 |= ADC_CFG1_ADICLK(0) | ADC_CFG1_ADIV(3) | ADC_CFG1_ADLSMP(1) | ADC_CFG1_MODE(3);
+  ADC1->CFG1 = ADC_CFG1_ADICLK(0)   // clock = busclick
+		     | ADC_CFG1_ADIV(3)     // Div 8 => ADCK = 60MHz/8 = 7.5MHz
+			 | ADC_CFG1_ADLSMP(1)   // Long sample time
+			 | ADC_CFG1_MODE(3);    // 16bit conversion
+  ADC1->CFG2 = 0;
 
   // todo #11.04 select the alternate reference source (VREF)
-  ADC1->SC2 |= ADC_SC2_REFSEL(1);
+  ADC1->SC2 |= ADC_SC2_REFSEL(0x01);   // alternate reference source (VREF)
 
   // todo #11.05 configure hardware average of 32 samples
-  ADC1->SC3 |= ADC_SC3_AVGE(3);
+  ADC1->SC3 |= (ADC_SC3_AVGE_MASK | ADC_SC3_AVGS(0x03));   // hardware average enable, 32 samples averaged
 
   // adc calibration
   ADC1->SC3 |= ADC_SC3_CAL(1);                 // Start calibration
