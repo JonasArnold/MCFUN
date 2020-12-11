@@ -298,7 +298,7 @@ void lsInit(void)
   PORTC->PCR[15] = PORT_PCR_MUX(1); PORTC->PCR[17] = PORT_PCR_MUX(1);
   PORTC->PCR[18] = PORT_PCR_MUX(1);
   GPIOC->PDDR |= (1<<6) | (1<<7) | (1<<15) | (1<<17) | (1<<18);  // as output
-  IR_L_OFF(); IR_ML_OFF(); IR_M_OFF(); IR_MR_OFF(); IR_R_OFF();  // disable leds
+  IR_OFF();  // disable leds
 
   // todo #12.06 configure each timer channel of the phototransistors as Input Capture on Falling Edge with Interrupt enable
   FTM0->CONTROLS[3].CnSC = FTM_CnSC_ELSx(2) | FTM_CnSC_MSx(0) | FTM_CnSC_CHIE(1);
